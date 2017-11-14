@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Create2.cs" />
+    <Compile Remove="PutGame.cs" />
   </ItemGroup>
   <ItemGroup>    
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.2" />
@@ -18,6 +19,9 @@
     <None Update="local.settings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
+    <None Update="TicTacToe.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 </Project>

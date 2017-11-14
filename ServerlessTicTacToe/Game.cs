@@ -12,8 +12,6 @@ namespace ServerlessTicTacToe
         public string Player1 { get; set; }
         public string Player2 { get; set; }
         public int PlayerTurn { get; set; }
-        public string Row1 { get; set; }
-        public string Row2 { get; set; }
-        public string Row3 { get; set; }
+        public string Board { get; set; }
     }
 }

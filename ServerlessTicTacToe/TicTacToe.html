@@ -1,0 +1,200 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <style type="text/css">
+        .row {
+            width: 450px;
+        }
+        .cell {
+            float: left;
+            height: 145px;
+            width: 145px;
+        }
+        .X {
+            background-image: url(https://i.stack.imgur.com/mwfLB.png);
+            background-position: left top;
+        }
+        .O {
+            background-image: url(https://i.stack.imgur.com/mwfLB.png);
+            background-position: right top;
+        }
+        .left{
+            border-right: 5px solid black;
+        }
+        .right {
+            border-left: 5px solid black;
+        }
+        .top {
+            border-bottom: 5px solid black;
+        }
+        .bottom {
+            border-top: 5px solid black;
+        }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript">
+        var createGameUrl = "http://localhost:7071/api/CreateGame";
+        var getGameUrl = "http://localhost:7071/api/GetGame/{gameid}";
+        var joinGameUrl = "http://localhost:7071/api/JoinGame";
+        var takeTurnGameUrl = "http://localhost:7071/api/TakeTurn";
+        var gamestate = undefined;
+
+        $(document).ready(function () {
+            $(".cell").click(boardClick);
+            $("#buttonGo").click(buttonGoClick);
+            var gameid = $.urlParam("gameid");
+
+            if (gameid) {
+                console.log("Got gameid: " + gameid);
+                var url = getGameUrl.replace("{gameid}", gameid);
+                $.getJSON(url, function (data) {
+                    newGameData(data);
+                });
+            }
+
+            if (!gamestate) {
+                $("#board").hide();
+                setPlayerNames(undefined, undefined);
+
+            }
+        });
+
+        $.urlParam = function (name) {
+            var results = new RegExp('[\?&]' + name + '=([^&#]*)')
+                .exec(window.location.href);
+
+            if (results == null)
+                return null;
+
+            return results[1] || 0;
+        }
+
+        function boardClick() {
+            var cellNo = $(this).data("cellno");
+            var player = "";
+            console.log(cellNo);
+            if (gamestate.PlayerTurn == 1) {
+                gamestate.Board[cellNo] = "X";
+                gamestate.PlayerTurn = 2;
+                player = gamestate.Player1;
+            }
+            else
+                if (gamestate.PlayerTurn == 2) {
+                    gamestate.Board[cellNo] = "O";
+                    gamestate.PlayerTurn = 1;
+                    player = gamestate.Player2;
+                }
+            renderBoard(gamestate.Board);
+            TakeTurn(cellNo, player, gamestate.PartitionKey);
+        }
+
+        function buttonGoClick() {
+            if (!gamestate || !gamestate.Player1)
+                CreateGame($("#PlayerName").val());
+            else
+                if (!gamestate.Player2)
+                    JoinGame($("#PlayerName").val(), gamestate.PartitionKey);
+        }
+
+        function CreateGame(p1) {
+            $.ajax({
+                url: createGameUrl,
+                type: "POST",
+                data: JSON.stringify({ name: p1 }),
+                contentType: "application/json",
+                dataType: "json",
+                success: function (data) {
+                    newGameData(data);
+                }
+            });
+        }
+
+        function JoinGame(p2, partitionKey) {
+            $.ajax({
+                url: joinGameUrl,
+                type: "POST",
+                data: JSON.stringify({ name: p2, partitionKey: partitionKey }),
+                contentType: "application/json",
+                dataType: "json",
+                success: function (data) {
+                    newGameData(data);
+                }
+            });
+        }
+
+        function TakeTurn(pos, player, partitionKey) {
+            $.ajax({
+                url: takeTurnGameUrl,
+                type: "POST",
+                data: JSON.stringify({ player: player, position: pos, partitionKey: partitionKey }),
+                contentType: "application/json",
+                dataType: "json",
+                success: function (data) {
+                    newGameData(data);
+                }
+            });
+        }
+
+        function newGameData(data) {
+            console.log(data);
+            gamestate = data;
+            setPlayerNames(gamestate.Player1, gamestate.Player2);
+            renderBoard(gamestate.Board);
+        }
+
+        function setPlayerNames(p1, p2) {
+            if (!p1) {
+                $("#StartGame").show();
+                $("#Header").hide();
+            }
+            else
+                if (!p2) {
+                    $("#StartGame").show();
+                    $("#Header").text(p1+" VS ?").show();
+                }
+                else {
+                    $("#StartGame").hide();
+                    $("#Header").text(p1 + " VS " + p2).show();
+                    $("#board").show();
+                }
+
+        }
+
+        function renderBoard(board) {
+            for (var i = 0; i < board.length; i++) {
+                var cell = $(".cell[data-cellno=" + i + "]");
+                if (board[i] != '-' && !cell.hasClass(board[i]))
+                    cell.addClass(board[i]);
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Tic-Tac-Toe</h1>
+    <h2 id="Header" style="display:none">
+    </h2>
+    <div id="StartGame" style="display:none">
+        Please choose a name: <input type="text" id="PlayerName" /><input value="GO!" type="button" id="buttonGo" />
+    </div>
+    <div id="board">
+        <div class="row">
+            <div class="cell left top" data-cellno="0"></div>
+            <div class="cell top" data-cellno="1"></div>
+            <div class="cell right top" data-cellno="2" ></div>
+        </div>
+        <div class="row">
+            <div class="cell left" data-cellno="3"></div>
+            <div class="cell" data-cellno="4"></div>
+            <div class="cell right" data-cellno="5"></div>
+        </div>
+        <div class="row">
+            <div class="cell left bottom" data-cellno="6"></div>
+            <div class="cell bottom" data-cellno="7"></div>
+            <div class="cell right bottom" data-cellno="8"></div>
+        </div>
+    </div>
+</body>
+</html>
